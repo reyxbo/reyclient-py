@@ -1,6 +1,6 @@
 [project]
 name = "reyclient"
-version = "1.0.4"
+version = "1.0.6"
 description = "API request client method set."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -11,6 +11,7 @@ authors = [
 ]
 dependencies = [
     "alibabacloud_dypnsapi20170525",
+    "alibabacloud_tea_openapi>=0.4.3",
     "reydb",
     "reykit"
 ]
