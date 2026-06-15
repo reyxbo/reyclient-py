@@ -25,6 +25,7 @@ from ..rbase import ClientDatabaseRecord
 from .rbase import ClientAli, create_client_ali
 
 __all__ = (
+    'AliVerifyLocalPhoneToken',
     'ClientORMTableAliVerifySms',
     'ClientAliVerify',
     'ClientAliVerifySms',
@@ -426,7 +427,7 @@ class ClientAliVerifyLocalPhone(ClientAliVerify):
 
         return result
 
-    def get_phone(self, token: str) -> str:
+    def get_phone(self, token: str) -> str | None:
         """
         Get phone number by token.
 
@@ -449,7 +450,7 @@ class ClientAliVerifyLocalPhone(ClientAliVerify):
 
         return phone
 
-    async def async_get_phone(self, token: str) -> str:
+    async def async_get_phone(self, token: str) -> str | None:
         """
         Asynchronous get phone number by token.
 
