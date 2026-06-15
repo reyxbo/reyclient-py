@@ -32,7 +32,7 @@ __all__ = (
     'ClientAliVerifyLocalPhone'
 )
 
-AliVerifyLocalPhoneToken = TypedDict('AliVerifyLocalPhoneToken', {'jwt_token': str, 'access_token': str})
+AliVerifyLocalPhoneToken = TypedDict('AliVerifyLocalPhoneToken', {'access_token': str, 'jwt_token': str})
 
 class ClientORMTableAliVerifySms(ClientAli, rorm.Table):
     """
@@ -421,8 +421,8 @@ class ClientAliVerifyLocalPhone(ClientAliVerify):
 
         # Response.
         result = {
-            'jwt_token': response.body.token_info.jwt_token,
             'access_token': response.body.token_info.access_token,
+            'jwt_token': response.body.token_info.jwt_token
         }
 
         return result
