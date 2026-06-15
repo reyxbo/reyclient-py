@@ -8,25 +8,30 @@
 @Explain : Ali website verify methods.
 """
 
-from alibabacloud_dypnsapi20170525.client import Client as AliClient
-from alibabacloud_dypnsapi20170525.models import SendSmsVerifyCodeRequest as AliSendRequest, CheckSmsVerifyCodeRequest as AliCheckRequest
+from typing import TypedDict
+from alibabacloud_dypnsapi20170525.models import (
+    SendSmsVerifyCodeRequest,
+    CheckSmsVerifyCodeRequest,
+    GetAuthTokenRequest,
+    GetPhoneWithTokenRequest
+)
 from alibabacloud_tea_util.models import RuntimeOptions as AliRuntimeOptions
-from alibabacloud_tea_openapi.models import Config as AliConfig
 from alibabacloud_tea_openapi.exceptions import ClientException
-from alibabacloud_credentials.models import Config as AliCredentialConfig
-from alibabacloud_credentials.client import Client as AliCredentialClient
 from reydb import rorm, DatabaseEngine, DatabaseEngineAsync
 from reykit.rbase import throw
 from reykit.rtime import now
 
 from ..rbase import ClientDatabaseRecord
-from .rbase import ClientAli
+from .rbase import ClientAli, create_client_ali
 
 __all__ = (
     'ClientORMTableAliVerifySms',
     'ClientAliVerify',
-    'ClientAliVerifySms'
+    'ClientAliVerifySms',
+    'ClientAliVerifyLocalPhone'
 )
+
+AliVerifyLocalPhoneToken = TypedDict('AliVerifyLocalPhoneToken', {'JwtToken': str, 'AccessToken': str})
 
 class ClientORMTableAliVerifySms(ClientAli, rorm.Table):
     """
@@ -86,17 +91,7 @@ class ClientAliVerifySms(ClientAliVerify):
         self.interval_s = interval_s
 
         # Client.
-        credential_config = AliCredentialConfig(
-                type='access_key',
-                access_key_id=key_id,
-                access_key_secret=key_secret
-        )
-        credential_client = AliCredentialClient(credential_config)
-        config = AliConfig(
-            credential=credential_client,
-            endpoint='dypnsapi.aliyuncs.com'
-        )
-        self.client = AliClient(config)
+        self.client = create_client_ali(key_id, key_secret)
 
         # Database.
         self.db_record = ClientDatabaseRecord(self, 'ali_verify_sms')
@@ -122,7 +117,7 @@ class ClientAliVerifySms(ClientAliVerify):
         # Parameter.
         valid_time = self.valid_m * 60
         template_param = '{"code":"##code##","min":"%s"}' % self.valid_m
-        request = AliSendRequest(
+        request = SendSmsVerifyCodeRequest(
             scheme_name=scene,
             phone_number=phone,
             sign_name='速通互联验证码',
@@ -170,7 +165,7 @@ class ClientAliVerifySms(ClientAliVerify):
         # Parameter.
         valid_time = self.valid_m * 60
         template_param = '{"code":"##code##","min":"%s"}' % self.valid_m
-        request = AliSendRequest(
+        request = SendSmsVerifyCodeRequest(
             scheme_name=scene,
             phone_number=phone,
             sign_name='速通互联验证码',
@@ -217,7 +212,7 @@ class ClientAliVerifySms(ClientAliVerify):
         """
 
         # Parameter.
-        request = AliCheckRequest(
+        request = CheckSmsVerifyCodeRequest(
             scheme_name=scene,
             phone_number=phone,
             verify_code=code
@@ -261,7 +256,7 @@ class ClientAliVerifySms(ClientAliVerify):
         """
 
         # Parameter.
-        request = AliCheckRequest(
+        request = CheckSmsVerifyCodeRequest(
             scheme_name=scene,
             phone_number=phone,
             verify_code=code
@@ -349,3 +344,130 @@ class ClientAliVerifySms(ClientAliVerify):
 
         # Build.
         self.db_engine.sync_engine.build(tables=tables, views_stats=views_stats, skip=True)
+
+class ClientAliVerifyLocalPhone(ClientAliVerify):
+    """
+    Ali verify local phone number client type.
+    """
+
+    def __init__(
+        self,
+        key_id: str,
+        key_secret: str,
+        scene: str
+    ) -> None:
+        """
+        Build instance attributes.
+
+        Parameters
+        ----------
+        key_id : Access key ID.
+        key_secret : Access key secret.
+        scene : Scene code.
+        """
+
+        # Build.
+        self.key_id = key_id
+        self.key_secret = key_secret
+        self.scene = scene
+
+        # Client.
+        self.client = create_client_ali(key_id, key_secret)
+
+    def get_auth_token(self) -> AliVerifyLocalPhoneToken:
+        """
+        Get authentication token.
+
+        Returns
+        -------
+        Authentication token dictionary.
+        """
+
+        # Request.
+        request = GetAuthTokenRequest(
+            url='https://reyxbo.com:2/',
+            origin='https://reyxbo.com:2',
+            scene_code=self.scene
+        )
+        runtime = AliRuntimeOptions()
+        response = self.client.get_auth_token_with_options(request, runtime)
+
+        # Response.
+        result = {
+            'jwt_token': response.body.token_info.jwt_token,
+            'access_token': response.body.token_info.access_token,
+        }
+
+        return result
+
+    async def async_get_auth_token(self) -> AliVerifyLocalPhoneToken:
+        """
+        Asynchronous get authentication token.
+
+        Returns
+        -------
+        Authentication token dictionary.
+        """
+
+        # Request.
+        request = GetAuthTokenRequest(
+            url='https://reyxbo.com:2/',
+            origin='https://reyxbo.com:2',
+            scene_code=self.scene
+        )
+        runtime = AliRuntimeOptions()
+        response = await self.client.get_auth_token_with_options_async(request, runtime)
+
+        # Response.
+        result = {
+            'jwt_token': response.body.token_info.jwt_token,
+            'access_token': response.body.token_info.access_token,
+        }
+
+        return result
+
+    def get_phone(self, token: str) -> str:
+        """
+        Get phone number by token.
+
+        Parameters
+        ----------
+        token : Token.
+
+        Returns
+        -------
+        Phone number.
+        """
+
+        # Request.
+        request = GetPhoneWithTokenRequest(sp_token=token)
+        runtime = AliRuntimeOptions()
+        response = self.client.get_phone_with_token_with_options(request, runtime)
+
+        # Response.
+        phone = response.body.data.mobile
+
+        return phone
+
+    async def async_get_phone(self, token: str) -> str:
+        """
+        Asynchronous get phone number by token.
+
+        Parameters
+        ----------
+        token : Token.
+
+        Returns
+        -------
+        Phone number.
+        """
+
+        # Request.
+        request = GetPhoneWithTokenRequest(sp_token=token)
+        runtime = AliRuntimeOptions()
+        response = await self.client.get_phone_with_token_with_options_async(request, runtime)
+
+        # Response.
+        phone = response.body.data.mobile
+
+        return phone
