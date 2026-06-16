@@ -355,6 +355,7 @@ class ClientAliVerifyLocalPhone(ClientAliVerify):
         self,
         key_id: str,
         key_secret: str,
+        url: str,
         scene: str
     ) -> None:
         """
@@ -364,12 +365,15 @@ class ClientAliVerifyLocalPhone(ClientAliVerify):
         ----------
         key_id : Access key ID.
         key_secret : Access key secret.
+        url : Web URL.
         scene : Scene code.
         """
 
         # Build.
         self.key_id = key_id
         self.key_secret = key_secret
+        self.url = url.lstrip('/') + '/'
+        self.origin = url.lstrip('/')
         self.scene = scene
 
         # Client.
@@ -386,8 +390,8 @@ class ClientAliVerifyLocalPhone(ClientAliVerify):
 
         # Request.
         request = GetAuthTokenRequest(
-            url='https://reyxbo.com:2/',
-            origin='https://reyxbo.com:2',
+            url=self.url,
+            origin=self.origin,
             scene_code=self.scene
         )
         runtime = AliRuntimeOptions()
@@ -412,8 +416,8 @@ class ClientAliVerifyLocalPhone(ClientAliVerify):
 
         # Request.
         request = GetAuthTokenRequest(
-            url='https://reyxbo.com:2/',
-            origin='https://reyxbo.com:2',
+            url=self.url,
+            origin=self.origin,
             scene_code=self.scene
         )
         runtime = AliRuntimeOptions()
