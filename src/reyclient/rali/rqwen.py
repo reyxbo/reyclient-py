@@ -60,7 +60,7 @@ type ChatRecordsIndex = Hashable
 type ChatRecordsData = dict[ChatRecordsIndex, ChatRecords]
 ChatRecordsAppend = TypedDict('ChatRecordsAppend', {'time': NotRequired[int], 'role': NotRequired[ChatRecordRole], 'content': str})
 type ChatRecordsAppends = list[ChatRecordsAppend]
-ChatReplyGenerator = Generator[str, Any, None]
+ChatReplyGenerator = Generator[str | list[dict[Literal['text', str]]], Any, None]
 ChatThinkGenerator = Generator[str, Any, None]
 
 class ClientORMTableAliQwen(ClientAli, rorm.Table):
