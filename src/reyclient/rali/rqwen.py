@@ -76,15 +76,10 @@ class ClientAliQwen(ClientAli):
     Can create database used `self.build_db` method.
     """
 
-    url_api = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation'
-    'API request URL.'
-    url_doc = 'https://help.aliyun.com/zh/model-studio/use-qwen-by-calling-api?spm=a2c4g.11186623.0.0.330e7d9dSBCaZQ'
-    'API document URL.'
-    model = 'qwen-turbo-latest'
-    'API AI model type.'
-
     def __init__(
         self,
+        url: str,
+        model: str,
         key: str,
         db_engine: DatabaseEngine | None = None,
         system: str | None = None,
@@ -97,6 +92,8 @@ class ClientAliQwen(ClientAli):
 
         Parameters
         ----------
+        url : API URL.
+        model : Model type.
         key : API key.
         db_engine : Database engine, insert request record to table.
         system : AI system description.
@@ -110,6 +107,8 @@ class ClientAliQwen(ClientAli):
             throw(ValueError, rand)
 
         # Build.
+        self.url = url
+        self.model = model
         self.key = key
         self.auth = 'Bearer ' + key
         self.db_engine = db_engine
@@ -161,7 +160,7 @@ class ClientAliQwen(ClientAli):
 
         # Request.
         response = reykit_request(
-            self.url_api,
+            self.url,
             json=json,
             headers=headers,
             stream=stream,
