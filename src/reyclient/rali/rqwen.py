@@ -49,7 +49,6 @@ ChatRecord = TypedDict(
         'time': int,
         'role': ChatRecordRole,
         'content': ChatRecordContent,
-        'len': int | None,
         'token': ChatRecordToken | None,
         'web': ChatResponseWeb | None,
         'think': str | None
@@ -97,7 +96,7 @@ class ClientAliQwen(ClientAli):
         db_engine: DatabaseEngine | None = None,
         system: str | None = None,
         rand: float = 0.5,
-        history_max_char: int | None = None,
+        history_max_token: int | None = None,
         history_max_time: float | None = None
     ) -> None:
         """
@@ -111,7 +110,7 @@ class ClientAliQwen(ClientAli):
         db_engine : Database engine, insert request record to table.
         system : AI system description.
         rand : AI reply randomness, value range is `[0,1]`.
-        history_max_char : History messages record maximum character count.
+        history_max_token : History messages record maximum token count.
         history_max_time : History messages record maximum second.
         """
 
@@ -127,7 +126,7 @@ class ClientAliQwen(ClientAli):
         self.db_engine = db_engine
         self.system = system
         self.rand = rand
-        self.history_max_char = history_max_char
+        self.history_max_token = history_max_token
         self.history_max_time = history_max_time
         self.data: ChatRecordsData = {}
 
@@ -310,15 +309,10 @@ class ClientAliQwen(ClientAli):
         response_token = self.extract_response_token(response_json)
         response_web = self.extract_response_web(response_json)
         response_think = self.extract_response_think(response_json)
-        if response_text is None:
-            response_text_len = None
-        else:
-            response_text_len = len(response_text)
         chat_record_reply = {
             'time': now('timestamp'),
             'role': 'assistant',
             'content': response_text,
-            'len': response_text_len,
             'token': response_token,
             'web': response_web,
             'think': response_think
@@ -417,7 +411,6 @@ class ClientAliQwen(ClientAli):
                     if response_text is None:
                         continue
                     chat_record_reply['content'] += response_text
-                    chat_record_reply['len'] += len(response_text)
                     yield response_text
 
                 ## Think.
@@ -429,8 +422,6 @@ class ClientAliQwen(ClientAli):
                         is_think_emptied = True
                         response_text = self.extract_response_text(response_json)
                         chat_record_reply['content'] = response_text
-                        if response_text is not None:
-                            chat_record_reply['len'] += len(response_text)
                         break
 
                     chat_record_reply['think'] += response_think
@@ -449,7 +440,7 @@ class ClientAliQwen(ClientAli):
         self,
         records: ChatRecordsAppend | ChatRecordsAppends | str | list[str],
         index: ChatRecordsIndex,
-        history_max_char: int | None = None,
+        history_max_token: int | None = None,
         history_max_time: float | None = None
     ) -> None:
         """
@@ -464,8 +455,8 @@ class ClientAliQwen(ClientAli):
             - `str`: Message content.
             - `list[str]`: Message content list.
         index : Chat records index.
-        history_max_char : History messages record maximum character count.
-            - `None`: Use `self.history_max_char`.
+        history_max_token : History messages record maximum token count.
+            - `None`: Use `self.history_max_token`.
         history_max_time : History messages record maximum second.
             - `None`: Use `self.history_max_time`.
         """
@@ -488,7 +479,6 @@ class ClientAliQwen(ClientAli):
                 'time': record.get('time', now_timestamp),
                 'role': record.get('role', 'user'),
                 'content': record['content'],
-                'len': len(record['content']),
                 'token': None,
                 'web': None,
                 'think': None
@@ -504,12 +494,12 @@ class ClientAliQwen(ClientAli):
         chat_records_history.sort(key=lambda chat_record: chat_record['time'])
 
         # Beyond.
-        self.get_chat_records_history(index, history_max_char, history_max_time, True)
+        self.get_chat_records_history(index, history_max_token, history_max_time, True)
 
     def get_chat_records_history(
         self,
         index: ChatRecordsIndex,
-        history_max_char: int | None = None,
+        history_max_token: int | None = None,
         history_max_time: float | None = None,
         delete: bool = False
     ) -> ChatRecords:
@@ -519,8 +509,8 @@ class ClientAliQwen(ClientAli):
         Parameters
         ----------
         index : Chat records index.
-        history_max_char : History messages record maximum character count.
-            - `None`: Use `self.history_max_char`.
+        history_max_token : History messages record maximum token count.
+            - `None`: Use `self.history_max_token`.
         history_max_time : History messages record maximum second.
             - `None`: Use `self.history_max_time`.
         delete : Whether delete records of beyond the range from history.
@@ -535,20 +525,22 @@ class ClientAliQwen(ClientAli):
         chat_records_history: ChatRecords = self.data.setdefault(index, [])
 
         # Max.
-        if history_max_char is None:
-            history_max_char = self.history_max_char
+        if history_max_token is None:
+            history_max_token = self.history_max_token
         if history_max_time is None:
             history_max_time = self.history_max_time
         if history_max_time is not None:
             history_max_time_us = history_max_time * 1000
-        char_len = 0
+        token_count = 0
         chat_records_history_reverse = chat_records_history[::-1]
         beyond_index = None
         for index, chat_record in enumerate(chat_records_history_reverse):
             if (
                 (
-                    history_max_char is not None
-                    and (char_len := char_len + chat_record['len']) > history_max_char
+                    history_max_token is not None
+                    and (
+                        token_count := token_count + chat_record.get('token', {}).get('total', 0)
+                    ) > history_max_token
                 )
                 or (
                     history_max_time is not None
@@ -588,7 +580,7 @@ class ClientAliQwen(ClientAli):
         system: str | None = None,
         web: bool = False,
         web_mark: bool = False,
-        history_max_char: int | None = None,
+        history_max_token: int | None = None,
         history_max_time: float | None = None
     ) -> ChatRecord: ...
 
@@ -605,7 +597,7 @@ class ClientAliQwen(ClientAli):
         web_mark: bool = False,
         *,
         stream: Literal[True],
-        history_max_char: int | None = None,
+        history_max_token: int | None = None,
         history_max_time: float | None = None
     ) -> tuple[ChatRecord, ChatReplyGenerator]: ...
 
@@ -623,7 +615,7 @@ class ClientAliQwen(ClientAli):
         *,
         think: Literal[True],
         stream: Literal[True],
-        history_max_char: int | None = None,
+        history_max_token: int | None = None,
         history_max_time: float | None = None
     ) -> tuple[ChatRecord, ChatReplyGenerator, ChatThinkGenerator]: ...
 
@@ -640,7 +632,7 @@ class ClientAliQwen(ClientAli):
         web_mark: bool = False,
         *,
         think: Literal[True],
-        history_max_char: int | None = None,
+        history_max_token: int | None = None,
         history_max_time: float | None = None
     ) -> NoReturn: ...
 
@@ -656,7 +648,7 @@ class ClientAliQwen(ClientAli):
         web_mark: bool = False,
         think: bool = False,
         stream: bool = False,
-        history_max_char: int | None = None,
+        history_max_token: int | None = None,
         history_max_time: float | None = None
     ) -> ChatRecord | tuple[ChatRecord, ChatReplyGenerator] | tuple[ChatRecord, ChatReplyGenerator, ChatThinkGenerator]:
         """
@@ -679,8 +671,8 @@ class ClientAliQwen(ClientAli):
         web_mark : Whether display web search citation mark, format is `[ref_<number>]`.
         think : Whether use deep think, when is `True`, then parameter `stream` must also be `True`.
         stream : Whether use stream response, record after full return values.
-        history_max_char : History messages record maximum character count.
-            - `None`: Use `self.history_max_char`.
+        history_max_token : History messages record maximum token count.
+            - `None`: Use `self.history_max_token`.
         history_max_time : History messages record maximum second.
             - `None`: Use `self.history_max_time`.
 
@@ -713,7 +705,7 @@ class ClientAliQwen(ClientAli):
 
         ## History.
         if index is not None:
-            chat_records_history = self.get_chat_records_history(index, history_max_char, history_max_time, True)
+            chat_records_history = self.get_chat_records_history(index, history_max_token, history_max_time, True)
         else:
             chat_records_history: ChatRecords = []
 
@@ -723,7 +715,6 @@ class ClientAliQwen(ClientAli):
                 'time': now('timestamp'),
                 'role': 'system',
                 'content': system,
-                'len': len(system),
                 'token': None,
                 'web': None,
                 'think': None
@@ -748,7 +739,6 @@ class ClientAliQwen(ClientAli):
             'time': now('timestamp'),
             'role': 'user',
             'content': content,
-            'len': len(text),
             'token': None,
             'web': None,
             'think': None
