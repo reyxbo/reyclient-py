@@ -24,9 +24,22 @@ __all__ = (
     'ClientAliQwen'
 )
 
-# Key 'role' value 'system' only in first.
-# Key 'role' value 'user' and 'assistant' can mix.
 type ChatRecordRole = Literal['system', 'user', 'assistant']
+"""
+Key "role" value 'system' only in first.
+Key "role" value 'user' and 'assistant' can mix.
+"""
+ChatRecordContentMedia = TypedDict(
+    'ChatRecordContentMedia',
+    {
+        'text': str,
+        'image': NotRequired[str],
+        'video': NotRequired[str],
+        'audio': NotRequired[str]
+    }
+)
+type chatRecordContentMultiMedia = list[ChatRecordContentMedia]
+type ChatRecordContent = str | chatRecordContentMultiMedia | None
 ChatRecordToken = TypedDict('ChatRecordToken', {'total': int, 'input': int, 'output': int, 'output_think': int | None})
 ChatResponseWebItem = TypedDict('ChatResponseWebItem', {'site': str | None, 'icon': str | None, 'index': int, 'url': str, 'title': str})
 type ChatResponseWeb = list[ChatResponseWebItem]
@@ -35,7 +48,7 @@ ChatRecord = TypedDict(
     {
         'time': int,
         'role': ChatRecordRole,
-        'content': str | None,
+        'content': ChatRecordContent,
         'len': int | None,
         'token': ChatRecordToken | None,
         'web': ChatResponseWeb | None,
@@ -458,14 +471,14 @@ class ClientAliQwen(ClientAli):
         """
 
         # Parameter.
-        if type(records) == str:
+        if type(records) is str:
             records = [{'content': records}]
-        elif type(records) == dict:
+        elif type(records) is dict:
             records = [records]
-        elif type(records) == list:
+        elif type(records) is list:
             records = [
                 {'content': records}
-                if type(record) == str
+                if type(record) is str
                 else record
                 for record in records
             ]
@@ -488,8 +501,7 @@ class ClientAliQwen(ClientAli):
         chat_records_history.extend(records)
 
         # Sort.
-        sort_key = lambda chat_record: chat_record['time']
-        chat_records_history.sort(key=sort_key)
+        chat_records_history.sort(key=lambda chat_record: chat_record['time'])
 
         # Beyond.
         self.get_chat_records_history(index, history_max_char, history_max_time, True)
@@ -569,6 +581,9 @@ class ClientAliQwen(ClientAli):
     def chat(
         self,
         text: str,
+        image: str | Iterable[str] | None = None,
+        video: str | Iterable[str] | None = None,
+        audio: str | Iterable[str] | None = None,
         index: ChatRecordsIndex | None = None,
         role: str | None = None,
         web: bool = False,
@@ -581,6 +596,9 @@ class ClientAliQwen(ClientAli):
     def chat(
         self,
         text: str,
+        image: str | Iterable[str] | None = None,
+        video: str | Iterable[str] | None = None,
+        audio: str | Iterable[str] | None = None,
         index: ChatRecordsIndex | None = None,
         system: str | None = None,
         web: bool = False,
@@ -595,6 +613,9 @@ class ClientAliQwen(ClientAli):
     def chat(
         self,
         text: str,
+        image: str | Iterable[str] | None = None,
+        video: str | Iterable[str] | None = None,
+        audio: str | Iterable[str] | None = None,
         index: ChatRecordsIndex | None = None,
         system: str | None = None,
         web: bool = False,
@@ -610,6 +631,9 @@ class ClientAliQwen(ClientAli):
     def chat(
         self,
         text: str,
+        image: str | Iterable[str] | None = None,
+        video: str | Iterable[str] | None = None,
+        audio: str | Iterable[str] | None = None,
         index: ChatRecordsIndex | None = None,
         system: str | None = None,
         web: bool = False,
@@ -622,7 +646,10 @@ class ClientAliQwen(ClientAli):
 
     def chat(
         self,
-        text: str,
+        text: str | Iterable[str],
+        image: str | Iterable[str] | None = None,
+        video: str | Iterable[str] | None = None,
+        audio: str | Iterable[str] | None = None,
         index: ChatRecordsIndex | None = None,
         system: str | None = None,
         web: bool = False,
@@ -638,6 +665,13 @@ class ClientAliQwen(ClientAli):
         Parameters
         ----------
         text : User chat text.
+            `Iterable[str]`: Join with the `\n` character.
+        image : User chat image web URL.
+            `Iterable[str]`: Can be multiple.
+        video : User chat video web URL.
+            `Iterable[str]`: Can be multiple.
+        audio : User chat audio web URL.
+            `Iterable[str]`: Can be multiple.
         index : Chat records index.
             `None`: Not use record.
         system : Extra AI system description, will be connected to `self.system`.
@@ -662,6 +696,12 @@ class ClientAliQwen(ClientAli):
             throw(ValueError, think, stream)
 
         # Parameter.
+        if type(image) is str:
+            image = (image,)
+        if type(video) is str:
+            video = (video,)
+        if type(audio) is str:
+            audio = (audio,)
         if (
             system is not None
             and self.system is not None
@@ -693,10 +733,21 @@ class ClientAliQwen(ClientAli):
             chat_records_role: ChatRecords = []
 
         ### Now.
+        content = []
+        media_content = {
+            'image': image,
+            'video': video,
+            'audio': audio
+        }
+        for type_, data in media_content.items():
+            if data is not None:
+                for url in data:
+                    content.append({type_: url})
+        content.append({'text': text})
         chat_record_now: ChatRecord= {
             'time': now('timestamp'),
             'role': 'user',
-            'content': text,
+            'content': content,
             'len': len(text),
             'token': None,
             'web': None,
