@@ -97,7 +97,11 @@ class ClientAliQwen(ClientAli):
         system: str | None = None,
         rand: float = 0.5,
         history_max_token: int | None = None,
-        history_max_time: float | None = None
+        history_max_time: float | None = None,
+        image_max_pixels: int = 1003520,
+        video_fps: int = 2,
+        video_max_pixels: int = 501760,
+        video_total_pixels: int = 819200000
     ) -> None:
         """
         Build instance attributes.
@@ -112,6 +116,10 @@ class ClientAliQwen(ClientAli):
         rand : AI reply randomness, value range is `[0,1]`.
         history_max_token : History messages record maximum token count.
         history_max_time : History messages record maximum second.
+        image_max_pixels : Maximum pixels number of image.
+        video_fps : Frames per second of video.
+        video_max_pixels : Maximum pixels number of video per frame.
+        video_total_pixels : Maximum total pixels number of video all frames.
         """
 
         # Check.
@@ -128,6 +136,10 @@ class ClientAliQwen(ClientAli):
         self.rand = rand
         self.history_max_token = history_max_token
         self.history_max_time = history_max_time
+        self.image_max_pixels = image_max_pixels
+        self.video_fps = video_fps
+        self.video_max_pixels = video_max_pixels
+        self.video_total_pixels = video_total_pixels
         self.data: ChatRecordsData = {}
 
         # Database.
@@ -485,6 +497,10 @@ class ClientAliQwen(ClientAli):
             }
             for record in records
         ]
+        if history_max_token is None:
+            history_max_token = self.history_max_token
+        if history_max_time is None:
+            history_max_time = self.history_max_time
         chat_records_history: ChatRecords = self.data.setdefault(index, [])
 
         # Append.
@@ -510,9 +526,7 @@ class ClientAliQwen(ClientAli):
         ----------
         index : Chat records index.
         history_max_token : History messages record maximum token count.
-            - `None`: Use `self.history_max_token`.
         history_max_time : History messages record maximum second.
-            - `None`: Use `self.history_max_time`.
         delete : Whether delete records of beyond the range from history.
 
         Returns
@@ -525,10 +539,6 @@ class ClientAliQwen(ClientAli):
         chat_records_history: ChatRecords = self.data.setdefault(index, [])
 
         # Max.
-        if history_max_token is None:
-            history_max_token = self.history_max_token
-        if history_max_time is None:
-            history_max_time = self.history_max_time
         if history_max_time is not None:
             history_max_time_us = history_max_time * 1000
         chat_records_history_reverse = chat_records_history[::-1]
@@ -653,7 +663,11 @@ class ClientAliQwen(ClientAli):
         think: bool = False,
         stream: bool = False,
         history_max_token: int | None = None,
-        history_max_time: float | None = None
+        history_max_time: float | None = None,
+        image_max_pixels: int | None = None,
+        video_fps: int | None = None,
+        video_max_pixels: int | None = None,
+        video_total_pixels: int | None = None
     ) -> ChatRecord | tuple[ChatRecord, ChatReplyGenerator] | tuple[ChatRecord, ChatReplyGenerator, ChatThinkGenerator]:
         """
         Chat with AI.
@@ -679,6 +693,14 @@ class ClientAliQwen(ClientAli):
             - `None`: Use `self.history_max_token`.
         history_max_time : History messages record maximum second.
             - `None`: Use `self.history_max_time`.
+        image_max_pixels : Maximum pixels number of image.
+            - `None`: Use `self.image_max_pixels`.
+        video_fps : Frames per second of video.
+            - `None`: Use `self.video_fps`.
+        video_max_pixels : Maximum pixels number of video per frame.
+            - `None`: Use `self.video_max_pixels`.
+        video_total_pixels : Maximum total pixels number of video all frames.
+            - `None`: Use `self.video_total_pixels`.
 
         Returns
         -------
@@ -705,6 +727,18 @@ class ClientAliQwen(ClientAli):
             system = ''.join([self.system, system])
         elif system is None:
             system = self.system
+        if history_max_token is None:
+            history_max_token = self.history_max_token
+        if history_max_time is None:
+            history_max_time = self.history_max_time
+        if image_max_pixels is None:
+            image_max_pixels = self.image_max_pixels
+        if video_fps is None:
+            video_fps = self.video_fps
+        if video_max_pixels is None:
+            video_max_pixels = self.video_max_pixels
+        if video_total_pixels is None:
+            video_total_pixels = self.video_total_pixels
         json = {'input': {}, 'parameters': {}}
 
         ## History.
@@ -729,15 +763,27 @@ class ClientAliQwen(ClientAli):
 
         ### Now.
         content = []
-        media_content = {
-            'image': image,
-            'video': video,
-            'audio': audio
-        }
-        for type_, data in media_content.items():
-            if data is not None:
-                for url in data:
-                    content.append({type_: url})
+        if image is not None:
+            for url in image:
+                content.append(
+                    {
+                        'image': url,
+                        'max_pixels': image_max_pixels
+                    }
+                )
+        if video is not None:
+            for url in video:
+                content.append(
+                    {
+                        'video': url,
+                        'fps': video_fps,
+                        'max_pixels': video_max_pixels,
+                        'total_pixels': video_total_pixels
+                    }
+                )
+        if audio is not None:
+            for url in audio:
+                content.append({'audio': url})
         content.append({'text': text})
         chat_record_now: ChatRecord= {
             'time': now('timestamp'),
