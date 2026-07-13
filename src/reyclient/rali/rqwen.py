@@ -585,7 +585,7 @@ class ClientAliQwen(ClientAli):
         video: str | Iterable[str] | None = None,
         audio: str | Iterable[str] | None = None,
         index: ChatRecordsIndex | None = None,
-        role: str | None = None,
+        system: str | None = None,
         web: bool = False,
         web_mark: bool = False,
         history_max_char: int | None = None,
