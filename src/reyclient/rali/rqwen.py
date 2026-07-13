@@ -531,11 +531,12 @@ class ClientAliQwen(ClientAli):
             history_max_time = self.history_max_time
         if history_max_time is not None:
             history_max_time_us = history_max_time * 1000
-        if chat_records_history == []:
-            latest_token_count = 0
-        else:
-            latest_token_count = chat_records_history[-1]['token']['total']
         chat_records_history_reverse = chat_records_history[::-1]
+        latest_token_count = 0
+        for chat_record in chat_records_history_reverse:
+            if chat_record['token'] is not None:
+                latest_token_count = chat_record['token']['total']
+                break
         beyond_index = None
         for index, chat_record in enumerate(chat_records_history_reverse):
             if (
