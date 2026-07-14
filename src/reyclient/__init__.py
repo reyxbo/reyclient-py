@@ -11,6 +11,6 @@ Modules
 -------
 rali : Ali website methods.
 rbaidu : Baidu website methods.
-rall : All methods.
+rall : All import methods.
 rbase : Base methods.
 """
