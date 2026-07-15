@@ -222,7 +222,9 @@ class ClientAliQwen(ClientAli):
         # Extract.
         output_data = response_json.get('output')
         if output_data is not None:
-            response_text: str = output_data['choices'][0]['message']['content']
+            response_text: str | list[dict[Literal['text'], str]]= output_data['choices'][0]['message']['content']
+            if type(response_text) is list:
+                response_text = ''.join([i['text'] for i in response_text])
         else:
             response_text = None
 
