@@ -38,8 +38,7 @@ ChatRecordContentMedia = TypedDict(
         'audio': NotRequired[str]
     }
 )
-type chatRecordContentMultiMedia = list[ChatRecordContentMedia]
-type ChatRecordContent = str | chatRecordContentMultiMedia | None
+type ChatRecordContent = str | list[ChatRecordContentMedia] | None
 ChatRecordToken = TypedDict('ChatRecordToken', {'total': int, 'input': int, 'output': int, 'output_think': int | None})
 ChatResponseWebItem = TypedDict('ChatResponseWebItem', {'site': str | None, 'icon': str | None, 'index': int, 'url': str, 'title': str})
 type ChatResponseWeb = list[ChatResponseWebItem]
@@ -57,7 +56,7 @@ ChatRecord = TypedDict(
 type ChatRecords = list[ChatRecord]
 type ChatRecordsIndex = Hashable
 type ChatRecordsData = dict[ChatRecordsIndex, ChatRecords]
-ChatRecordsAppend = TypedDict('ChatRecordsAppend', {'time': NotRequired[int], 'role': NotRequired[ChatRecordRole], 'content': str})
+ChatRecordsAppend = TypedDict('ChatRecordsAppend', {'time': NotRequired[int], 'role': NotRequired[ChatRecordRole], 'content': str | ChatRecordContent})
 type ChatRecordsAppends = list[ChatRecordsAppend]
 ChatReplyGenerator = Generator[str | list[dict[Literal['text', str]]], Any, None]
 ChatThinkGenerator = Generator[str, Any, None]
@@ -475,12 +474,12 @@ class ClientAliQwen(ClientAli):
 
         # Parameter.
         if type(records) is str:
-            records = [{'content': records}]
+            records = [{'content': [{'text': records}]}]
         elif type(records) is dict:
             records = [records]
         elif type(records) is list:
             records = [
-                {'content': records}
+                {'content': [{'text': record}]}
                 if type(record) is str
                 else record
                 for record in records
@@ -508,19 +507,6 @@ class ClientAliQwen(ClientAli):
 
         # Sort.
         chat_records_history.sort(key=lambda chat_record: chat_record['time'])
-
-        # Merge role.
-        chat_records_history_merged = []
-        chat_record_item: ChatRecord = None
-        for chat_record in chat_records_history:
-            if chat_record_item is None:
-                chat_record_item = chat_record
-            elif chat_record_item['role'] == chat_record['role']:
-                chat_record_item['content'].append(chat_record['content'])
-            else:
-                chat_records_history_merged.append(chat_record_item)
-                chat_record_item = chat_record
-        self.data[index] = chat_records_history_merged
 
         # Beyond.
         self.get_chat_records_history(index, history_max_token, history_max_time, True)
