@@ -518,8 +518,8 @@ class ClientAliQwen(ClientAli):
             elif chat_record_item['role'] == chat_record['role']:
                 chat_record_item['content'].append(chat_record['content'])
             else:
-                chat_record_item = chat_record
                 chat_records_history_merged.append(chat_record_item)
+                chat_record_item = chat_record
         self.data[index] = chat_records_history_merged
 
         # Beyond.
