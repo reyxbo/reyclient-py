@@ -1032,7 +1032,10 @@ class ClientAliQwen(ClientAli):
         """
 
         # Parameter.
-        self.db_record['reply'] = record['content']
+        if type(record['content']) is list:
+            self.db_record['reply'] = ''.join([i['text'] for i in record['content']])
+        else:
+            self.db_record['reply'] = record['content']
         self.db_record['think'] = record['think']
         self.db_record['web'] = record['web']
         self.db_record['token_total'] = record['token']['total']
