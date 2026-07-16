@@ -121,7 +121,7 @@ class ClientAliVerifySms(ClientAliVerify):
         request = SendSmsVerifyCodeRequest(
             scheme_name=scene,
             phone_number=phone,
-            sign_name='速通互联验证码',
+            sign_name='恒创联众',
             template_code='100001',
             template_param=template_param,
             code_length=self.code_len,
