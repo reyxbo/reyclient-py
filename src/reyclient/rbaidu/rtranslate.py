@@ -253,12 +253,12 @@ class ClientBaiduTranslate(ClientBaidu):
         Parameters
         ----------
         text : Text.
-            - "self.is_auth is True": Maximum length is 6000.
-            - "self.is_auth is False": Maximum length is 3000.
+            - `self.is_auth is True`: Maximum length is 6000.
+            - `self.is_auth is False`: Maximum length is 3000.
         from_lang : Source language.
-            - "None": Automatic judgment.
+            - `None`: Automatic judgment.
         to_lang : Target language.
-            - "None": Automatic judgment.
+            - `None`: Automatic judgment.
 
         Returns
         -------
