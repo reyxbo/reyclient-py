@@ -29,15 +29,31 @@ type ChatRecordRole = Literal['system', 'user', 'assistant']
 Key "role" value 'system' only in first.
 Key "role" value 'user' and 'assistant' can mix.
 """
-ChatRecordContentMedia = TypedDict(
-    'ChatRecordContentMedia',
+ChatRecordContentMediaText = TypedDict(
+    'ChatRecordContentMediaImage',
+    {'text': str}
+)
+ChatRecordContentMediaImage = TypedDict(
+    'ChatRecordContentMediaImage',
     {
-        'text': str,
-        'image': NotRequired[str],
-        'video': NotRequired[str],
-        'audio': NotRequired[str]
+        'image': str,
+        'max_pixels': NotRequired[int]
     }
 )
+ChatRecordContentMediaVideo = TypedDict(
+    'ChatRecordContentMediaImage',
+    {
+        'video': str,
+        'fps': NotRequired[int],
+        'max_pixels': NotRequired[int],
+        'total_pixels': NotRequired[int]
+    }
+)
+ChatRecordContentMediaAudio = TypedDict(
+    'ChatRecordContentMediaImage',
+    {'audio': str}
+)
+type ChatRecordContentMedia = ChatRecordContentMediaText | ChatRecordContentMediaImage | ChatRecordContentMediaVideo | ChatRecordContentMediaAudio
 type ChatRecordContent = str | list[ChatRecordContentMedia] | None
 ChatRecordToken = TypedDict('ChatRecordToken', {'total': int, 'input': int, 'output': int, 'output_think': int | None})
 ChatResponseWebItem = TypedDict('ChatResponseWebItem', {'site': str | None, 'icon': str | None, 'index': int, 'url': str, 'title': str})
