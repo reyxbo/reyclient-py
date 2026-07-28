@@ -41,10 +41,10 @@ class ClientORMTableAliVerifySms(ClientAli, rorm.Table):
 
     __name__ = 'ali_verify_sms'
     __comment__ = 'Ali API verify sms request record table.'
-    id: int = rorm.Field(key_auto=True, comment='ID.')
     request_time: rorm.Datetime = rorm.Field(not_null=True, index_n=True, comment='Request time.')
     response_time: rorm.Datetime = rorm.Field(not_null=True, index_n=True, comment='Response time.')
     use_time: rorm.Datetime | None = rorm.Field(comment='Use time.')
+    id: int = rorm.Field(key_auto=True, comment='ID.')
     scene: str = rorm.Field(rorm.types.VARCHAR(20), not_null=True, index_n=True, comment='Usage scene.')
     phone: str = rorm.Field(rorm.types.CHAR(11), not_null=True, index_n=True, comment='Phone number.')
     code: str = rorm.Field(rorm.types.VARCHAR(8), not_null=True, index_n=True, comment='Verification code.', len_min=4, len_max=8)

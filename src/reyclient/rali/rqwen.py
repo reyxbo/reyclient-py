@@ -84,9 +84,9 @@ class ClientORMTableAliQwen(ClientAli, rorm.Table):
 
     __name__ = 'ali_qwen'
     __comment__ = 'Ali API qwen model request record table.'
-    id: int = rorm.Field(key_auto=True, comment='ID.')
     request_time: rorm.Datetime = rorm.Field(not_null=True, index_n=True, comment='Request time.')
     response_time: rorm.Datetime = rorm.Field(not_null=True, index_n=True, comment='Response time, when is stream response, then is full return after time.')
+    id: int = rorm.Field(key_auto=True, comment='ID.')
     messages: rorm.Json = rorm.Field(rorm.JSONB, not_null=True, comment='Input messages data.')
     reply: str = rorm.Field(rorm.types.TEXT, not_null=True, comment='Output reply text.')
     think: str | None = rorm.Field(rorm.types.TEXT, comment='Output deep think text.')

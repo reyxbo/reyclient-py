@@ -1,6 +1,6 @@
 [project]
 name = "reyclient"
-version = "1.0.30"
+version = "1.0.31"
 description = "API request client method set."
 readme = "README.md"
 requires-python = ">=3.12"
