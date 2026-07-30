@@ -603,7 +603,8 @@ class ClientAliQwen(ClientAli):
         web: bool = False,
         web_mark: bool = False,
         history_max_token: int | None = None,
-        history_max_time: float | None = None
+        history_max_time: float | None = None,
+        temp_content: str | ChatRecordContent | list[ChatRecordContent] | None = None
     ) -> ChatRecord: ...
 
     @overload
@@ -617,7 +618,8 @@ class ClientAliQwen(ClientAli):
         *,
         stream: Literal[True],
         history_max_token: int | None = None,
-        history_max_time: float | None = None
+        history_max_time: float | None = None,
+        temp_content: str | ChatRecordContent | list[ChatRecordContent] | None = None
     ) -> tuple[ChatRecord, ChatReplyGenerator]: ...
 
     @overload
@@ -632,7 +634,8 @@ class ClientAliQwen(ClientAli):
         think: Literal[True],
         stream: Literal[True],
         history_max_token: int | None = None,
-        history_max_time: float | None = None
+        history_max_time: float | None = None,
+        temp_content: str | ChatRecordContent | list[ChatRecordContent] | None = None
     ) -> tuple[ChatRecord, ChatReplyGenerator, ChatThinkGenerator]: ...
 
     @overload
@@ -646,7 +649,8 @@ class ClientAliQwen(ClientAli):
         *,
         think: Literal[True],
         history_max_token: int | None = None,
-        history_max_time: float | None = None
+        history_max_time: float | None = None,
+        temp_content: str | ChatRecordContent | list[ChatRecordContent] | None = None
     ) -> NoReturn: ...
 
     def chat(
@@ -663,7 +667,8 @@ class ClientAliQwen(ClientAli):
         image_max_pixels: int | None = None,
         video_fps: int | None = None,
         video_max_pixels: int | None = None,
-        video_total_pixels: int | None = None
+        video_total_pixels: int | None = None,
+        temp_content: str | ChatRecordContent | list[ChatRecordContent] | None = None
     ) -> ChatRecord | tuple[ChatRecord, ChatReplyGenerator] | tuple[ChatRecord, ChatReplyGenerator, ChatThinkGenerator]:
         """
         Chat with AI.
@@ -697,6 +702,7 @@ class ClientAliQwen(ClientAli):
             - `None`: Use `self.video_max_pixels`.
         video_total_pixels : Maximum total pixels number of video all frames.
             - `None`: Use `self.video_total_pixels`.
+        temp_content : Temporary append content, not record. Content order is `system, *records, *temp_content, *content`.
 
         Returns
         -------
@@ -706,6 +712,8 @@ class ClientAliQwen(ClientAli):
         # Check.
         if content == '':
             throw(ValueError, content)
+        if temp_content == '':
+            throw(ValueError, temp_content)
         if think and not stream:
             throw(ValueError, think, stream)
 
@@ -714,6 +722,12 @@ class ClientAliQwen(ClientAli):
             content = {'text': content}
         if type(content) is dict:
             content = [content]
+        if temp_content is None:
+            temp_content = []
+        if type(temp_content) is str:
+            temp_content = {'text': temp_content}
+        if type(temp_content) is dict:
+            temp_content = [temp_content]
         if (
             system is not None
             and self.system is not None
@@ -733,15 +747,23 @@ class ClientAliQwen(ClientAli):
             video_max_pixels = self.video_max_pixels
         if video_total_pixels is None:
             video_total_pixels = self.video_total_pixels
+        for i in content:
+            if 'image' in i:
+                i['max_pixels'] = image_max_pixels
+            elif 'video' in i:
+                i['fps'] = video_fps
+                i['max_pixels'] = video_max_pixels
+                i['total_pixels'] = video_total_pixels
+        for i in temp_content:
+            if 'image' in i:
+                i['max_pixels'] = image_max_pixels
+            elif 'video' in i:
+                i['fps'] = video_fps
+                i['max_pixels'] = video_max_pixels
+                i['total_pixels'] = video_total_pixels
         json = {'input': {}, 'parameters': {}}
 
-        ## History.
-        if index is not None:
-            chat_records_history = self.get_chat_records_history(index, history_max_token, history_max_time, True)
-        else:
-            chat_records_history: ChatRecords = []
-
-        ### Role.
+        ## System.
         if system is not None:
             chat_record_role: ChatRecord = {
                 'time': now('timestamp'),
@@ -751,18 +773,17 @@ class ClientAliQwen(ClientAli):
                 'web': None,
                 'think': None
             }
-            chat_records_role: ChatRecords = [chat_record_role]
+            chat_records_system: ChatRecords = [chat_record_role]
         else:
-            chat_records_role: ChatRecords = []
+            chat_records_system: ChatRecords = []
+
+        ## History.
+        if index is not None:
+            chat_records_history = self.get_chat_records_history(index, history_max_token, history_max_time, True)
+        else:
+            chat_records_history: ChatRecords = []
 
         ### Now.
-        for i in content:
-            if 'image' in i:
-                i['max_pixels'] = image_max_pixels
-            elif 'video' in i:
-                i['fps'] = video_fps
-                i['max_pixels'] = video_max_pixels
-                i['total_pixels'] = video_total_pixels
         chat_record_now: ChatRecord= {
             'time': now('timestamp'),
             'role': 'user',
@@ -771,15 +792,22 @@ class ClientAliQwen(ClientAli):
             'web': None,
             'think': None
         }
-        chat_records_now: ChatRecords = [chat_record_now]
+        chat_record_now_append_temp: ChatRecord= {
+            'time': now('timestamp'),
+            'role': 'user',
+            'content': temp_content + content,
+            'token': None,
+            'web': None,
+            'think': None
+        }
+        chat_records_now_append_temp: ChatRecords = [chat_record_now_append_temp]
 
-        messages: ChatRecords = chat_records_role + chat_records_history + chat_records_now
         messages = [
             {
                 'role': message['role'],
                 'content': message['content']
             }
-            for message in messages
+            for message in chat_records_system + chat_records_history + chat_records_now_append_temp
         ]
 
         ## Database.
