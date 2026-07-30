@@ -749,18 +749,18 @@ class ClientAliQwen(ClientAli):
             video_total_pixels = self.video_total_pixels
         for i in content:
             if 'image' in i:
-                i['max_pixels'] = image_max_pixels
+                i.setdefault('max_pixels', image_max_pixels)
             elif 'video' in i:
-                i['fps'] = video_fps
-                i['max_pixels'] = video_max_pixels
-                i['total_pixels'] = video_total_pixels
+                i.setdefault('fps', video_fps)
+                i.setdefault('max_pixels', video_max_pixels)
+                i.setdefault('total_pixels', video_total_pixels)
         for i in temp_content:
             if 'image' in i:
-                i['max_pixels'] = image_max_pixels
+                i.setdefault('max_pixels', image_max_pixels)
             elif 'video' in i:
-                i['fps'] = video_fps
-                i['max_pixels'] = video_max_pixels
-                i['total_pixels'] = video_total_pixels
+                i.setdefault('fps', video_fps)
+                i.setdefault('max_pixels', video_max_pixels)
+                i.setdefault('total_pixels', video_total_pixels)
         json = {'input': {}, 'parameters': {}}
 
         ## System.
@@ -783,7 +783,7 @@ class ClientAliQwen(ClientAli):
         else:
             chat_records_history: ChatRecords = []
 
-        ### Now.
+        ## Now.
         chat_record_now: ChatRecord= {
             'time': now('timestamp'),
             'role': 'user',
