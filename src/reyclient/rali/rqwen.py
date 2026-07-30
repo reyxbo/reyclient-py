@@ -598,19 +598,20 @@ class ClientAliQwen(ClientAli):
     def chat(
         self,
         content: str | ChatRecordContent | list[ChatRecordContent],
+        temp_content: str | ChatRecordContent | list[ChatRecordContent] | None = None,
         index: ChatRecordsIndex | None = None,
         system: str | None = None,
         web: bool = False,
         web_mark: bool = False,
         history_max_token: int | None = None,
-        history_max_time: float | None = None,
-        temp_content: str | ChatRecordContent | list[ChatRecordContent] | None = None
+        history_max_time: float | None = None
     ) -> ChatRecord: ...
 
     @overload
     def chat(
         self,
         content: str | ChatRecordContent | list[ChatRecordContent],
+        temp_content: str | ChatRecordContent | list[ChatRecordContent] | None = None,
         index: ChatRecordsIndex | None = None,
         system: str | None = None,
         web: bool = False,
@@ -618,14 +619,14 @@ class ClientAliQwen(ClientAli):
         *,
         stream: Literal[True],
         history_max_token: int | None = None,
-        history_max_time: float | None = None,
-        temp_content: str | ChatRecordContent | list[ChatRecordContent] | None = None
+        history_max_time: float | None = None
     ) -> tuple[ChatRecord, ChatReplyGenerator]: ...
 
     @overload
     def chat(
         self,
         content: str | ChatRecordContent | list[ChatRecordContent],
+        temp_content: str | ChatRecordContent | list[ChatRecordContent] | None = None,
         index: ChatRecordsIndex | None = None,
         system: str | None = None,
         web: bool = False,
@@ -634,14 +635,14 @@ class ClientAliQwen(ClientAli):
         think: Literal[True],
         stream: Literal[True],
         history_max_token: int | None = None,
-        history_max_time: float | None = None,
-        temp_content: str | ChatRecordContent | list[ChatRecordContent] | None = None
+        history_max_time: float | None = None
     ) -> tuple[ChatRecord, ChatReplyGenerator, ChatThinkGenerator]: ...
 
     @overload
     def chat(
         self,
         content: str | ChatRecordContent | list[ChatRecordContent],
+        temp_content: str | ChatRecordContent | list[ChatRecordContent] | None = None,
         index: ChatRecordsIndex | None = None,
         system: str | None = None,
         web: bool = False,
@@ -649,13 +650,13 @@ class ClientAliQwen(ClientAli):
         *,
         think: Literal[True],
         history_max_token: int | None = None,
-        history_max_time: float | None = None,
-        temp_content: str | ChatRecordContent | list[ChatRecordContent] | None = None
+        history_max_time: float | None = None
     ) -> NoReturn: ...
 
     def chat(
         self,
         content: str | ChatRecordContent | list[ChatRecordContent],
+        temp_content: str | ChatRecordContent | list[ChatRecordContent] | None = None,
         index: ChatRecordsIndex | None = None,
         system: str | None = None,
         web: bool = False,
@@ -667,22 +668,15 @@ class ClientAliQwen(ClientAli):
         image_max_pixels: int | None = None,
         video_fps: int | None = None,
         video_max_pixels: int | None = None,
-        video_total_pixels: int | None = None,
-        temp_content: str | ChatRecordContent | list[ChatRecordContent] | None = None
+        video_total_pixels: int | None = None
     ) -> ChatRecord | tuple[ChatRecord, ChatReplyGenerator] | tuple[ChatRecord, ChatReplyGenerator, ChatThinkGenerator]:
         """
         Chat with AI.
 
         Parameters
         ----------
-        text : User chat text.
-            `Iterable[str]`: Join with the `\n` character.
-        image : User chat image web URL.
-            `Iterable[str]`: Can be multiple.
-        video : User chat video web URL.
-            `Iterable[str]`: Can be multiple.
-        audio : User chat audio web URL.
-            `Iterable[str]`: Can be multiple.
+        content : Chat content.
+        temp_content : Temporary append chat content, not record. Content order is `system, *records, *temp_content, *content`.
         index : Chat records index.
             `None`: Not use record.
         system : Extra AI system description, will be connected to `self.system`.
@@ -702,7 +696,6 @@ class ClientAliQwen(ClientAli):
             - `None`: Use `self.video_max_pixels`.
         video_total_pixels : Maximum total pixels number of video all frames.
             - `None`: Use `self.video_total_pixels`.
-        temp_content : Temporary append content, not record. Content order is `system, *records, *temp_content, *content`.
 
         Returns
         -------
