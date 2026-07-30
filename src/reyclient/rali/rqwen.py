@@ -676,7 +676,7 @@ class ClientAliQwen(ClientAli):
         Parameters
         ----------
         content : Chat content.
-        temp_content : Temporary append chat content, not record. Content order is `system, *records, *temp_content, *content`.
+        temp_content : Temporary append chat content, not record. Content order is `system, *temp_content, *records, *content`.
         index : Chat records index.
             `None`: Not use record.
         system : Extra AI system description, will be connected to `self.system`.
@@ -785,7 +785,7 @@ class ClientAliQwen(ClientAli):
             'web': None,
             'think': None
         }
-        chat_record_now_append_temp: ChatRecord= {
+        chat_record_append_temp: ChatRecord= {
             'time': now('timestamp'),
             'role': 'user',
             'content': temp_content + content,
@@ -793,14 +793,15 @@ class ClientAliQwen(ClientAli):
             'web': None,
             'think': None
         }
-        chat_records_now_append_temp: ChatRecords = [chat_record_now_append_temp]
+        chat_records_now: ChatRecords = [chat_record_now]
+        chat_records_append_temp: ChatRecords = [chat_record_append_temp]
 
         messages = [
             {
                 'role': message['role'],
                 'content': message['content']
             }
-            for message in chat_records_system + chat_records_history + chat_records_now_append_temp
+            for message in chat_records_system + chat_records_append_temp + chat_records_history + chat_records_now
         ]
 
         ## Database.
