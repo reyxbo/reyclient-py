@@ -28,18 +28,18 @@ type ChatRecordRole = Literal['system', 'user', 'assistant']
 Key "role" value 'system' only in first.
 Key "role" value 'user' and 'assistant' can mix.
 """
-ChatRecordContentMediaText = TypedDict(
+ChatRecordContentText = TypedDict(
     'ChatRecordContentMediaImage',
     {'text': str}
 )
-ChatRecordContentMediaImage = TypedDict(
+ChatRecordContentImage = TypedDict(
     'ChatRecordContentMediaImage',
     {
         'image': str,
         'max_pixels': NotRequired[int]
     }
 )
-ChatRecordContentMediaVideo = TypedDict(
+ChatRecordContentVideo = TypedDict(
     'ChatRecordContentMediaImage',
     {
         'video': str,
@@ -48,12 +48,11 @@ ChatRecordContentMediaVideo = TypedDict(
         'total_pixels': NotRequired[int]
     }
 )
-ChatRecordContentMediaAudio = TypedDict(
+ChatRecordContentAudio = TypedDict(
     'ChatRecordContentMediaImage',
     {'audio': str}
 )
-type ChatRecordContentMedia = ChatRecordContentMediaText | ChatRecordContentMediaImage | ChatRecordContentMediaVideo | ChatRecordContentMediaAudio
-type ChatRecordContent = str | list[ChatRecordContentMedia] | None
+type ChatRecordContent = ChatRecordContentText | ChatRecordContentImage | ChatRecordContentVideo | ChatRecordContentAudio
 ChatRecordToken = TypedDict('ChatRecordToken', {'total': int, 'input': int, 'output': int, 'output_think': int | None})
 ChatResponseWebItem = TypedDict('ChatResponseWebItem', {'site': str | None, 'icon': str | None, 'index': int, 'url': str, 'title': str})
 type ChatResponseWeb = list[ChatResponseWebItem]
@@ -62,7 +61,7 @@ ChatRecord = TypedDict(
     {
         'time': int,
         'role': ChatRecordRole,
-        'content': ChatRecordContent,
+        'content': str | list[ChatRecordContent] | None,
         'token': ChatRecordToken | None,
         'web': ChatResponseWeb | None,
         'think': str | None
@@ -71,8 +70,7 @@ ChatRecord = TypedDict(
 type ChatRecords = list[ChatRecord]
 type ChatRecordsIndex = Hashable
 type ChatRecordsData = dict[ChatRecordsIndex, ChatRecords]
-ChatRecordsAppend = TypedDict('ChatRecordsAppend', {'time': NotRequired[int], 'role': NotRequired[ChatRecordRole], 'content': str | ChatRecordContent})
-type ChatRecordsAppends = list[ChatRecordsAppend]
+ChatRecordsAppend = TypedDict('ChatRecordsAppend', {'time': NotRequired[int], 'role': NotRequired[ChatRecordRole], 'content': str | list[ChatRecordContent]})
 ChatReplyGenerator = Generator[str | list[dict[Literal['text', str]]], Any, None]
 ChatThinkGenerator = Generator[str, Any, None]
 
@@ -466,7 +464,7 @@ class ClientAliQwen(ClientAli):
 
     def append_chat_records_history(
         self,
-        records: ChatRecordsAppend | ChatRecordsAppends | str | list[str],
+        records: str | ChatRecordsAppend | list[str | ChatRecordsAppend],
         index: ChatRecordsIndex,
         history_max_token: int | None = None,
         history_max_time: float | None = None
@@ -490,17 +488,14 @@ class ClientAliQwen(ClientAli):
         """
 
         # Parameter.
-        if type(records) is str:
-            records = [{'content': [{'text': records}]}]
-        elif type(records) is dict:
+        if type(records) is not list:
             records = [records]
-        elif type(records) is list:
-            records = [
-                {'content': [{'text': record}]}
-                if type(record) is str
-                else record
-                for record in records
-            ]
+        records = [
+            {'content': [{'text': record}]}
+            if type(record) is str
+            else record
+            for record in records
+        ]
         now_timestamp = now('timestamp')
         records = [
             {
@@ -602,10 +597,7 @@ class ClientAliQwen(ClientAli):
     @overload
     def chat(
         self,
-        text: str,
-        image: str | Iterable[str] | None = None,
-        video: str | Iterable[str] | None = None,
-        audio: str | Iterable[str] | None = None,
+        content: str | ChatRecordContent | list[ChatRecordContent],
         index: ChatRecordsIndex | None = None,
         system: str | None = None,
         web: bool = False,
@@ -617,10 +609,7 @@ class ClientAliQwen(ClientAli):
     @overload
     def chat(
         self,
-        text: str,
-        image: str | Iterable[str] | None = None,
-        video: str | Iterable[str] | None = None,
-        audio: str | Iterable[str] | None = None,
+        content: str | ChatRecordContent | list[ChatRecordContent],
         index: ChatRecordsIndex | None = None,
         system: str | None = None,
         web: bool = False,
@@ -634,10 +623,7 @@ class ClientAliQwen(ClientAli):
     @overload
     def chat(
         self,
-        text: str,
-        image: str | Iterable[str] | None = None,
-        video: str | Iterable[str] | None = None,
-        audio: str | Iterable[str] | None = None,
+        content: str | ChatRecordContent | list[ChatRecordContent],
         index: ChatRecordsIndex | None = None,
         system: str | None = None,
         web: bool = False,
@@ -652,10 +638,7 @@ class ClientAliQwen(ClientAli):
     @overload
     def chat(
         self,
-        text: str,
-        image: str | Iterable[str] | None = None,
-        video: str | Iterable[str] | None = None,
-        audio: str | Iterable[str] | None = None,
+        content: str | ChatRecordContent | list[ChatRecordContent],
         index: ChatRecordsIndex | None = None,
         system: str | None = None,
         web: bool = False,
@@ -668,10 +651,7 @@ class ClientAliQwen(ClientAli):
 
     def chat(
         self,
-        text: str | Iterable[str],
-        image: str | Iterable[str] | None = None,
-        video: str | Iterable[str] | None = None,
-        audio: str | Iterable[str] | None = None,
+        content: str | ChatRecordContent | list[ChatRecordContent],
         index: ChatRecordsIndex | None = None,
         system: str | None = None,
         web: bool = False,
@@ -724,18 +704,16 @@ class ClientAliQwen(ClientAli):
         """
 
         # Check.
-        if text == '':
-            throw(ValueError, text)
+        if content == '':
+            throw(ValueError, content)
         if think and not stream:
             throw(ValueError, think, stream)
 
         # Parameter.
-        if type(image) is str:
-            image = (image,)
-        if type(video) is str:
-            video = (video,)
-        if type(audio) is str:
-            audio = (audio,)
+        if type(content) is str:
+            content = {'text': content}
+        if type(content) is dict:
+            content = [content]
         if (
             system is not None
             and self.system is not None
@@ -778,29 +756,13 @@ class ClientAliQwen(ClientAli):
             chat_records_role: ChatRecords = []
 
         ### Now.
-        content = []
-        if image is not None:
-            for url in image:
-                content.append(
-                    {
-                        'image': url,
-                        'max_pixels': image_max_pixels
-                    }
-                )
-        if video is not None:
-            for url in video:
-                content.append(
-                    {
-                        'video': url,
-                        'fps': video_fps,
-                        'max_pixels': video_max_pixels,
-                        'total_pixels': video_total_pixels
-                    }
-                )
-        if audio is not None:
-            for url in audio:
-                content.append({'audio': url})
-        content.append({'text': text})
+        for i in content:
+            if 'image' in i:
+                i['max_pixels'] = image_max_pixels
+            elif 'video' in i:
+                i['fps'] = video_fps
+                i['max_pixels'] = video_max_pixels
+                i['total_pixels'] = video_total_pixels
         chat_record_now: ChatRecord= {
             'time': now('timestamp'),
             'role': 'user',
