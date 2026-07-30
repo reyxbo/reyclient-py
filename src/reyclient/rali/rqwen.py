@@ -564,7 +564,7 @@ class ClientAliQwen(ClientAli):
                 latest_token_count = chat_record['token']['total']
                 break
         beyond_index = None
-        for index, chat_record in enumerate(chat_records_history_reverse):
+        for i, chat_record in enumerate(chat_records_history_reverse):
             if (
                 (
                     history_max_token is not None
@@ -577,7 +577,7 @@ class ClientAliQwen(ClientAli):
                     and now_timestamp - chat_record['time'] > history_max_time_us
                 )
             ):
-                beyond_index = -index + 1
+                beyond_index = -i + 1
                 break
 
         # Beyond.
@@ -740,7 +740,7 @@ class ClientAliQwen(ClientAli):
             system is not None
             and self.system is not None
         ):
-            system = ''.join([self.system, system])
+            system = f'{self.system}{system}'
         elif system is None:
             system = self.system
         if history_max_token is None:

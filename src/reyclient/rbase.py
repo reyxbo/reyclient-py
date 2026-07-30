@@ -15,7 +15,6 @@ from reykit.rbase import Base
 
 __all__ = (
     'ClientBase',
-    'Client',
     'ClientWithDatabase',
     'ClientDatabaseRecord'
 )

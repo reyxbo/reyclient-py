@@ -153,14 +153,7 @@ class ClientBaiduTranslate(ClientBaidu):
         num_str = str(num)
 
         # Sign.
-        data = ''.join(
-            (
-                self.appid,
-                text,
-                num_str,
-                self.appkey
-            )
-        )
+        data = f'{self.appid}{text}{num_str}{self.appkey}'
         md5 = get_md5(data)
 
         return md5
