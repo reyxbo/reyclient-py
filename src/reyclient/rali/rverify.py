@@ -116,7 +116,7 @@ class ClientAliVerifySms(ClientAliVerify):
 
         # Parameter.
         valid_time = self.valid_m * 60
-        template_param = f'{"code":"##code##","min":"{self.valid_m}"}'
+        template_param = f'{{"code":"##code##","min":"{self.valid_m}"}}'
         request = SendSmsVerifyCodeRequest(
             scheme_name=scene,
             phone_number=phone,
@@ -164,7 +164,7 @@ class ClientAliVerifySms(ClientAliVerify):
 
         # Parameter.
         valid_time = self.valid_m * 60
-        template_param = f'{"code":"##code##","min":"{self.valid_m}"}'
+        template_param = f'{{"code":"##code##","min":"{self.valid_m}"}}'
         request = SendSmsVerifyCodeRequest(
             scheme_name=scene,
             phone_number=phone,
