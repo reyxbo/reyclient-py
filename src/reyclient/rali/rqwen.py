@@ -756,7 +756,9 @@ class ClientAliQwen(ClientAli):
                 i.setdefault('total_pixels', video_total_pixels)
         json = {'input': {}, 'parameters': {}}
 
-        ## System.
+        ## Message.
+
+        ### System.
         if system is not None:
             chat_record_role: ChatRecord = {
                 'time': now('timestamp'),
@@ -770,13 +772,13 @@ class ClientAliQwen(ClientAli):
         else:
             chat_records_system: ChatRecords = []
 
-        ## History.
+        ### History.
         if index is not None:
             chat_records_history = self.get_chat_records_history(index, history_max_token, history_max_time, True)
         else:
             chat_records_history: ChatRecords = []
 
-        ## Now.
+        ### Now.
         chat_record_now: ChatRecord= {
             'time': now('timestamp'),
             'role': 'user',
@@ -785,23 +787,29 @@ class ClientAliQwen(ClientAli):
             'web': None,
             'think': None
         }
+        chat_records_now: ChatRecords = [chat_record_now]
+
+        ### Temporay.
         chat_record_append_temp: ChatRecord= {
             'time': now('timestamp'),
             'role': 'user',
-            'content': temp_content + content,
+            'content': temp_content,
             'token': None,
             'web': None,
             'think': None
         }
-        chat_records_now: ChatRecords = [chat_record_now]
         chat_records_append_temp: ChatRecords = [chat_record_append_temp]
 
+        if temp_content == []:
+            messages = chat_records_system + chat_records_history + chat_records_now
+        else:
+            messages = chat_records_system + chat_records_append_temp + chat_records_history + chat_records_now
         messages = [
             {
                 'role': message['role'],
                 'content': message['content']
             }
-            for message in chat_records_system + chat_records_append_temp + chat_records_history + chat_records_now
+            for message in messages
         ]
 
         ## Database.
