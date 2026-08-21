@@ -1028,7 +1028,7 @@ class ClientAliQwen(ClientAli):
         ]
 
         # Build.
-        self.db_engine.build(tables=tables, views_stats=views_stats, skip=True)
+        self.db_engine.sync_engine.build(tables=tables, views_stats=views_stats, skip=True)
 
     def insert_db(self, record: ChatRecord) -> None:
         """
