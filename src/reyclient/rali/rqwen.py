@@ -853,7 +853,7 @@ class ClientAliQwen(ClientAli):
         ## Stream.
         if stream:
             response_iter: Iterable[str] = response
-            chat_record_reply, generator_text, generator_think = self.extract_response_generator(response_iter)
+            chat_record_reply, generator_text, generator_think = self.extract_response_generator(response_iter, db_record_item)
 
         ## Not Stream.
         else:
