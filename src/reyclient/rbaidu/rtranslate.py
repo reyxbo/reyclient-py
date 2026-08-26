@@ -263,6 +263,7 @@ class ClientBaiduTranslate(ClientBaidu):
             throw(AssertionError, self.max_len, text_len)
 
         # Parameter.
+        db_record_item = self.db_record.get_item()
         text = text.strip()
         if from_lang is None:
             from_lang = self.get_lang(text)
@@ -274,9 +275,9 @@ class ClientBaiduTranslate(ClientBaidu):
                 to_lang = ClientBaiduTranslateLangEnum.EN
 
         # Request.
-        self.db_record['request_time'] = now()
+        db_record_item['request_time'] = now()
         response_dict = self.request(text, from_lang, to_lang)
-        self.db_record['response_time'] = now()
+        db_record_item['response_time'] = now()
 
         # Extract.
         trans_text = '\n'.join(
@@ -287,11 +288,11 @@ class ClientBaiduTranslate(ClientBaidu):
         )
 
         # Database.
-        self.db_record['input'] = text
-        self.db_record['output'] = trans_text
-        self.db_record['input_lang'] = from_lang
-        self.db_record['output_lang'] = to_lang
-        self.db_record.record()
+        db_record_item['input'] = text
+        db_record_item['output'] = trans_text
+        db_record_item['input_lang'] = from_lang
+        db_record_item['output_lang'] = to_lang
+        db_record_item.record()
 
         return trans_text
 

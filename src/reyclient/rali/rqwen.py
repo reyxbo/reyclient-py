@@ -15,7 +15,7 @@ from reykit.rbase import throw
 from reykit.rnet import request as reykit_request
 from reykit.rtime import now
 
-from ..rbase import ClientDatabaseRecord
+from ..rbase import ClientDatabaseRecord, ClientDatabaseRecordItem
 from .rbase import ClientAli
 
 __all__ = (
@@ -346,13 +346,14 @@ class ClientAliQwen(ClientAli):
 
         return chat_record_reply
 
-    def extract_response_generator(self, response_iter: Iterable[str]):
+    def extract_response_generator(self, response_iter: Iterable[str], db_record_item: ClientDatabaseRecordItem):
         """
         Extract reply generator from response JSON.
 
         Parameters
         ----------
         response_iter : Response iterable.
+        db_record_item : `ClientDatabaseRecordItem` instance.
 
         Returns
         -------
@@ -455,7 +456,7 @@ class ClientAliQwen(ClientAli):
 
             # Database.
             else:
-                self.insert_db(chat_record_reply)
+                self.insert_db(chat_record_reply, db_record_item)
 
         generator_text = _generator('text')
         generator_think = _generator('think')
@@ -711,6 +712,7 @@ class ClientAliQwen(ClientAli):
             throw(ValueError, think, stream)
 
         # Parameter.
+        db_record_item = self.db_record.get_item()
         if type(content) is str:
             content = {'text': content}
         if type(content) is dict:
@@ -813,8 +815,8 @@ class ClientAliQwen(ClientAli):
         ]
 
         ## Database.
-        self.db_record['messages'] = messages
-        self.db_record['model'] = self.model
+        db_record_item['messages'] = messages
+        db_record_item['model'] = self.model
 
         ## Message.
         json['input']['messages'] = messages
@@ -842,9 +844,9 @@ class ClientAliQwen(ClientAli):
         json['stream'] = stream
 
         # Request.
-        self.db_record['request_time'] = now()
+        db_record_item['request_time'] = now()
         response = self.request(json, stream)
-        self.db_record['response_time'] = now()
+        db_record_item['response_time'] = now()
 
         # Extract.
 
@@ -872,7 +874,7 @@ class ClientAliQwen(ClientAli):
         else:
 
             ## Database.
-            self.insert_db(chat_record_reply)
+            self.insert_db(chat_record_reply, db_record_item)
 
             return chat_record_reply
 
@@ -1030,28 +1032,29 @@ class ClientAliQwen(ClientAli):
         # Build.
         self.db_engine.sync_engine.build(tables=tables, views_stats=views_stats, skip=True)
 
-    def insert_db(self, record: ChatRecord) -> None:
+    def insert_db(self, record: ChatRecord, db_record_item: ClientDatabaseRecordItem) -> None:
         """
         Insert record to table of database.
 
         Parameters
         ----------
         record : Record data.
+        db_record_item : `ClientDatabaseRecordItem` instance.
         """
 
         # Parameter.
         if type(record['content']) is list:
-            self.db_record['reply'] = ''.join([i['text'] for i in record['content']])
+            db_record_item['reply'] = ''.join([i['text'] for i in record['content']])
         else:
-            self.db_record['reply'] = record['content']
-        self.db_record['think'] = record['think']
-        self.db_record['web'] = record['web']
-        self.db_record['token_total'] = record['token']['total']
-        self.db_record['token_input'] = record['token']['input']
-        self.db_record['token_output'] = record['token']['output']
-        self.db_record['token_output_think'] = record['token']['output_think']
+            db_record_item['reply'] = record['content']
+        db_record_item['think'] = record['think']
+        db_record_item['web'] = record['web']
+        db_record_item['token_total'] = record['token']['total']
+        db_record_item['token_input'] = record['token']['input']
+        db_record_item['token_output'] = record['token']['output']
+        db_record_item['token_output_think'] = record['token']['output_think']
 
         # Insert.
-        self.db_record.record()
+        db_record_item.record()
 
     __call__ = chat

@@ -7,16 +7,17 @@
 @Explain : Base methods.
 """
 
+from __future__ import annotations
 from typing import Any, Protocol
 from types import MethodType
-from threading import get_ident as threading_get_ident
 from reydb import DatabaseEngine, DatabaseEngineAsync
 from reykit.rbase import Base
 
 __all__ = (
     'ClientBase',
     'ClientWithDatabase',
-    'ClientDatabaseRecord'
+    'ClientDatabaseRecord',
+    'ClientDatabaseRecordItem'
 )
 
 class ClientBase(Base):
@@ -35,7 +36,7 @@ class ClientWithDatabase(Protocol):
 
 class ClientDatabaseRecord(ClientBase):
     """
-    Request API fetch type of record into the database, can multi threaded.
+    Client type of record into the database.
     """
 
     def __init__(
@@ -56,7 +57,37 @@ class ClientDatabaseRecord(ClientBase):
         # Build.
         self.client = client
         self.table = table
-        self.data: dict[int, dict[str, Any]] = {}
+
+    def get_item(self) -> ClientDatabaseRecordItem:
+        """
+        Build `ClientDatabaseRecordItem` instance.
+        """
+
+        # Get.
+        item = ClientDatabaseRecordItem(self)
+
+        return item
+
+class ClientDatabaseRecordItem(ClientBase):
+    """
+    Client type of record one item into the database.
+    """
+
+    def __init__(
+        self,
+        db_record: ClientDatabaseRecord
+    ) -> None:
+        """
+        Build instance attributes.
+
+        Parameters
+        ----------
+        db_record : `ClientDatabaseRecord` instance.
+        """
+
+        # Build.
+        self.db_record = db_record
+        self.data: dict[str, Any] = {}
 
     def __setitem__(self, key: str, value: Any) -> None:
         """
@@ -69,15 +100,11 @@ class ClientDatabaseRecord(ClientBase):
         """
 
         # Check.
-        if self.client.db_engine is None:
+        if self.db_record.client.db_engine is None:
             return
 
-        # Parameter.
-        thread_id = threading_get_ident()
-        record = self.data.setdefault(thread_id, {})
-
         # Update.
-        record[key] = value
+        self.data[key] = value
 
     def record(self) -> None:
         """
@@ -85,18 +112,14 @@ class ClientDatabaseRecord(ClientBase):
         """
 
         # Check.
-        if self.client.db_engine is None:
+        if self.db_record.client.db_engine is None:
             return
 
-        # Parameter.
-        thread_id = threading_get_ident()
-        record = self.data.setdefault(thread_id, {})
-
         # Insert.
-        self.client.db_engine.sync_engine.execute.insert(self.table, record)
+        self.db_record.client.db_engine.sync_engine.execute.insert(self.db_record.table, self.data)
 
         # Delete.
-        del self.data[thread_id]
+        self.data = {}
 
     async def async_record(self) -> None:
         """
@@ -104,16 +127,11 @@ class ClientDatabaseRecord(ClientBase):
         """
 
         # Check.
-        if self.client.db_engine is None:
+        if self.db_record.client.db_engine is None:
             return
 
-        # Parameter.
-        thread_id = threading_get_ident()
-        record = self.data.setdefault(thread_id, {})
-
         # Insert.
-        db_engine = self.client.db_engine
-        await db_engine.async_engine.execute.insert(self.table, record)
+        await self.db_record.client.db_engine.async_engine.execute.insert(self.db_record.table, self.data)
 
         # Delete.
-        del self.data[thread_id]
+        self.data = {}

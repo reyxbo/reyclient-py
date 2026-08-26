@@ -115,6 +115,7 @@ class ClientAliVerifySms(ClientAliVerify):
         """
 
         # Parameter.
+        db_record_item = self.db_record.get_item()
         valid_time = self.valid_m * 60
         template_param = f'{{"code":"##code##","min":"{self.valid_m}"}}'
         request = SendSmsVerifyCodeRequest(
@@ -131,9 +132,9 @@ class ClientAliVerifySms(ClientAliVerify):
         runtime = AliRuntimeOptions()
 
         # Request.
-        self.db_record['request_time'] = now()
+        db_record_item['request_time'] = now()
         response = self.client.send_sms_verify_code_with_options(request, runtime)
-        self.db_record['response_time'] = now()
+        db_record_item['response_time'] = now()
 
         # Check.
         if not response.body.success:
@@ -141,10 +142,10 @@ class ClientAliVerifySms(ClientAliVerify):
 
         # Database.
         code: str = response.body.model.verify_code
-        self.db_record['scene'] = scene
-        self.db_record['phone'] = phone
-        self.db_record['code'] = code
-        self.db_record.record()
+        db_record_item['scene'] = scene
+        db_record_item['phone'] = phone
+        db_record_item['code'] = code
+        db_record_item.record()
 
         return code
 
@@ -163,6 +164,7 @@ class ClientAliVerifySms(ClientAliVerify):
         """
 
         # Parameter.
+        db_record_item = self.db_record.get_item()
         valid_time = self.valid_m * 60
         template_param = f'{{"code":"##code##","min":"{self.valid_m}"}}'
         request = SendSmsVerifyCodeRequest(
@@ -189,10 +191,10 @@ class ClientAliVerifySms(ClientAliVerify):
 
         # Database.
         code: str = response.body.model.verify_code
-        self.db_record['scene'] = scene
-        self.db_record['phone'] = phone
-        self.db_record['code'] = code
-        await self.db_record.async_record()
+        db_record_item['scene'] = scene
+        db_record_item['phone'] = phone
+        db_record_item['code'] = code
+        await db_record_item.async_record()
 
         return code
 
