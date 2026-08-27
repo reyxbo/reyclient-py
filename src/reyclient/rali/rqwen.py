@@ -679,7 +679,7 @@ class ClientAliQwen(ClientAli):
         content : Chat content.
         temp_content : Temporary append chat content, not record. Content order is `system, *temp_content, *records, *content`.
         index : Chat records index.
-            `None`: Not use record.
+            - `None`: Not use record.
         system : Extra AI system description, will be connected to `self.system`.
         web : Whether use web search.
         web_mark : Whether display web search citation mark, format is `[ref_<number>]`.
