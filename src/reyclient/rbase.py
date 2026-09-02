@@ -4,7 +4,8 @@
 @Time    : 2023-12-29
 @Author  : Rey
 @Contact : reyxbo@163.com
-@Explain : Base methods.
+@Explain : Base methods module.
+    Provides common base methods and shared dependencies used by other modules.
 """
 
 from __future__ import annotations
