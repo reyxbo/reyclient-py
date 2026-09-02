@@ -123,7 +123,7 @@ Main dependencies:
 | Python     | `>=3.12`                                                      |
 | Author     | `Rey`                                                         |
 | Email      | `reyxbo@163.com`                                              |
-| Homepage   | [reyxbo.com](https://www.reyxbo.com/release/python/reyclient) |
+| Homepage   | [REYXBO](https://www.reyxbo.com/release/python/reyclient)     |
 | Repository | [reyclient-py](https://github.com/reyxbo/reyclient-py.git)    |
 
 ## Keywords

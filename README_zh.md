@@ -123,7 +123,7 @@ reyclient 按功能划分为多个模块，各模块负责不同的 API 调用�
 | Python     | `>=3.12`                                                      |
 | 作者         | `Rey`                                                         |
 | 邮箱         | `reyxbo@163.com`                                              |
-| Homepage   | [reyxbo.com](https://www.reyxbo.com/release/python/reyclient) |
+| Homepage   | [REYXBO](https://www.reyxbo.com/release/python/reyclient)     |
 | Repository | [reyclient-py](https://github.com/reyxbo/reyclient-py.git)    |
 
 ## 关键词
